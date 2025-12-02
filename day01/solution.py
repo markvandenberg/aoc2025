@@ -40,10 +40,35 @@ def part1(data):
 
 
 def part2(data):
-    """Solve part 2."""
-    parsed = parse_input(data)
-    # TODO: Implement solution when part 2 is unlocked
-    return None
+    """Count how many times the dial points at 0, including during rotations."""
+    rotations = parse_input(data)
+    
+    position = 50  # Starting position
+    zero_count = 0
+    
+    for direction, distance in rotations:
+        original_distance = distance
+        
+        # Count full rotations (each passes through 0 once)
+        if distance >= 100:
+            zero_count += distance // 100
+            distance = distance % 100
+        
+        if direction == 'L':
+            # Moving left: check if we pass through or land on 0 in remaining distance
+            # We reach 0 if: 0 < position <= distance
+            if 0 < position <= distance:
+                zero_count += 1
+            position = (position - original_distance) % 100
+                
+        else:  # direction == 'R'
+            # Moving right: check if we pass through or land on 0 in remaining distance  
+            # We reach 0 if: position + distance >= 100
+            if distance > 0 and position + distance >= 100:
+                zero_count += 1
+            position = (position + original_distance) % 100
+    
+    return zero_count
 
 
 def main():
