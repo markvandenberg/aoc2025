@@ -44,11 +44,49 @@ def part1(data):
     return total
 
 
+def max_joltage_n_batteries(bank, n):
+    """Find the maximum joltage possible by selecting exactly n batteries.
+    
+    To maximize the resulting number, we want:
+    1. The leftmost digits to be as large as possible
+    2. This means we should skip the smallest digits
+    
+    Strategy: Remove (len(bank) - n) smallest digits while maintaining order.
+    """
+    if n >= len(bank):
+        return int(bank)
+    
+    digits_to_remove = len(bank) - n
+    bank_list = list(bank)
+    
+    # Greedily remove the smallest digits while maintaining order
+    # We want to keep the lexicographically largest subsequence of length n
+    for _ in range(digits_to_remove):
+        # Find the position to remove: we want to remove the first digit
+        # that is smaller than the digit after it (or the last digit if none found)
+        removed = False
+        for i in range(len(bank_list) - 1):
+            if bank_list[i] < bank_list[i + 1]:
+                bank_list.pop(i)
+                removed = True
+                break
+        
+        # If we didn't find any digit smaller than the next, remove the last digit
+        if not removed:
+            bank_list.pop()
+    
+    return int(''.join(bank_list))
+
+
 def part2(data):
-    """Solve part 2."""
-    parsed = parse_input(data)
-    # TODO: Implement solution when part 2 is unlocked
-    return None
+    """Find the maximum joltage from each bank using 12 batteries and sum them."""
+    banks = parse_input(data)
+    
+    total = 0
+    for bank in banks:
+        total += max_joltage_n_batteries(bank, 12)
+    
+    return total
 
 
 def main():
