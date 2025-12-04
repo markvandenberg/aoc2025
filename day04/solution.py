@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Advent of Code 2025 - Day X
+Advent of Code 2025 - Day 4: Printing Department
 """
 
 def read_input(filename='input.txt'):
@@ -10,28 +10,71 @@ def read_input(filename='input.txt'):
 
 
 def parse_input(data):
-    """Parse the input data."""
-    lines = data.split('\n')
-    return lines
+    """Parse the input data into a 2D grid."""
+    return [list(line) for line in data.split('\n')]
+
+
+def count_adjacent_rolls(grid, row, col):
+    """Count the number of paper rolls (@) in the 8 adjacent positions."""
+    rows = len(grid)
+    cols = len(grid[0])
+    
+    # 8 directions: up, down, left, right, and 4 diagonals
+    directions = [
+        (-1, -1), (-1, 0), (-1, 1),
+        (0, -1),           (0, 1),
+        (1, -1),  (1, 0),  (1, 1)
+    ]
+    
+    count = 0
+    for dr, dc in directions:
+        new_row = row + dr
+        new_col = col + dc
+        
+        # Check if position is within bounds
+        if 0 <= new_row < rows and 0 <= new_col < cols:
+            if grid[new_row][new_col] == '@':
+                count += 1
+    
+    return count
 
 
 def part1(data):
-    """Solve part 1."""
-    parsed = parse_input(data)
-    # TODO: Implement solution
-    return None
+    """Count how many rolls of paper can be accessed by a forklift.
+    
+    A roll can be accessed if there are fewer than 4 rolls in adjacent positions.
+    """
+    grid = parse_input(data)
+    rows = len(grid)
+    cols = len(grid[0])
+    
+    accessible_count = 0
+    
+    for row in range(rows):
+        for col in range(cols):
+            # Only check positions that have a paper roll
+            if grid[row][col] == '@':
+                adjacent_count = count_adjacent_rolls(grid, row, col)
+                
+                # Can access if fewer than 4 adjacent rolls
+                if adjacent_count < 4:
+                    accessible_count += 1
+    
+    return accessible_count
 
 
 def part2(data):
     """Solve part 2."""
     parsed = parse_input(data)
-    # TODO: Implement solution
+    # TODO: Implement solution when part 2 is unlocked
     return None
 
 
 def main():
-    # Read input
-    data = read_input()
+    import sys
+    # Read input (use command line argument if provided, otherwise default to input.txt)
+    filename = sys.argv[1] if len(sys.argv) > 1 else 'input.txt'
+    data = read_input(filename)
     
     # Solve parts
     result1 = part1(data)
