@@ -64,10 +64,38 @@ def part1(data):
 
 
 def part2(data):
-    """Solve part 2."""
-    parsed = parse_input(data)
-    # TODO: Implement solution when part 2 is unlocked
-    return None
+    """Count total rolls that can be removed by repeatedly removing accessible rolls.
+    
+    Keep removing accessible rolls (< 4 adjacent) until no more can be removed.
+    """
+    grid = parse_input(data)
+    rows = len(grid)
+    cols = len(grid[0])
+    
+    total_removed = 0
+    
+    while True:
+        # Find all accessible rolls in current state
+        accessible = []
+        
+        for row in range(rows):
+            for col in range(cols):
+                if grid[row][col] == '@':
+                    adjacent_count = count_adjacent_rolls(grid, row, col)
+                    if adjacent_count < 4:
+                        accessible.append((row, col))
+        
+        # If no more accessible rolls, stop
+        if not accessible:
+            break
+        
+        # Remove all accessible rolls
+        for row, col in accessible:
+            grid[row][col] = '.'
+        
+        total_removed += len(accessible)
+    
+    return total_removed
 
 
 def main():
