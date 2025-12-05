@@ -48,10 +48,31 @@ def part1(data):
 
 
 def part2(data):
-    """Solve part 2."""
-    fresh_ranges, available_ids = parse_input(data)
-    # TODO: Implement solution when part 2 is unlocked
-    return None
+    """Count total unique ingredient IDs that are considered fresh by the ranges.
+    
+    We need to merge overlapping ranges and count all IDs they cover.
+    """
+    fresh_ranges, _ = parse_input(data)
+    
+    # Sort ranges by start position
+    fresh_ranges.sort()
+    
+    # Merge overlapping ranges
+    merged = []
+    for start, end in fresh_ranges:
+        if merged and start <= merged[-1][1] + 1:
+            # Overlaps or adjacent with previous range, merge them
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            # No overlap, add as new range
+            merged.append((start, end))
+    
+    # Count total IDs in all merged ranges
+    total = 0
+    for start, end in merged:
+        total += (end - start + 1)
+    
+    return total
 
 
 def main():
