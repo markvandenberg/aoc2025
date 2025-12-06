@@ -81,11 +81,82 @@ def part1(data):
     return grand_total
 
 
+def parse_input_rtl(data):
+    """Parse the worksheet reading right-to-left, column by column.
+    
+    In cephalopod math:
+    - Each COLUMN represents ONE COMPLETE NUMBER
+    - Read each column top-to-bottom (top = most significant, bottom = least significant)
+    - Problems are groups of columns separated by empty columns
+    - Read problems right-to-left
+    """
+    lines = data.split('\n')
+    
+    if not lines:
+        return []
+    
+    # Find the width
+    width = max(len(line) for line in lines)
+    
+    # Pad all lines to the same width
+    padded_lines = [line.ljust(width) for line in lines]
+    
+    problems = []
+    col = width - 1  # Start from the rightmost column
+    
+    while col >= 0:
+        # Skip empty columns
+        if all(line[col] == ' ' for line in padded_lines):
+            col -= 1
+            continue
+        
+        # Found start of a problem (reading right-to-left)
+        # Collect all columns until we hit an empty column
+        problem_cols = []
+        while col >= 0 and not all(line[col] == ' ' for line in padded_lines):
+            problem_cols.append(col)
+            col -= 1
+        
+        # Each column in problem_cols represents one complete number
+        # Read each column top-to-bottom
+        numbers = []
+        operator = None
+        
+        for col_idx in problem_cols:
+            # Read this column top-to-bottom to form a number
+            number_str = ''
+            for row_idx in range(len(padded_lines) - 1):  # All rows except last
+                char = padded_lines[row_idx][col_idx]
+                if char != ' ':
+                    number_str += char
+            
+            if number_str:
+                numbers.append(int(number_str))
+        
+        # Last row has the operator - check any column in this problem
+        operator_line = padded_lines[-1]
+        for col_idx in problem_cols:
+            char = operator_line[col_idx]
+            if char in ['+', '*']:
+                operator = char
+                break
+        
+        if numbers and operator:
+            problems.append((numbers, operator))
+    
+    return problems
+
+
 def part2(data):
-    """Solve part 2."""
-    problems = parse_input(data)
-    # TODO: Implement solution when part 2 is unlocked
-    return None
+    """Solve all problems reading right-to-left (column-based) and return the grand total."""
+    problems = parse_input_rtl(data)
+    
+    grand_total = 0
+    for numbers, operator in problems:
+        answer = solve_problem(numbers, operator)
+        grand_total += answer
+    
+    return grand_total
 
 
 def main():
