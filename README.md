@@ -4,7 +4,7 @@ Solutions for [Advent of Code 2025](https://adventofcode.com/2025)
 
 ## Structure
 
-Each day has its own directory (`day01` through `day25`) containing:
+Each day has its own directory (`day01` through `day12`) containing:
 - `solution.py` - Python solution for both parts
 - `input.txt` - Your puzzle input
 - `example.txt` - Example input from problem description (optional)
