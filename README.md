@@ -25,6 +25,17 @@ cd dayXX
 python solution.py
 ```
 
+### Run Every Day & Measure Timings
+
+```bash
+python run_all.py
+```
+
+Options:
+- `--input example.txt` – use a different input file name for every day.
+- `--days 1 5 12` – limit execution to specific days (any mix of numbers or `dayXX`).
+- `--fail-fast` – stop immediately on the first failure.
+
 ### Test with Example Input
 
 ```bash
