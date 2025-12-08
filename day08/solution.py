@@ -102,7 +102,42 @@ def part1(data, num_connections=1000):
 
 
 def part2(data):
-    """Solve part 2 (not yet revealed)."""
+    """Find the last connection needed to form one circuit."""
+    positions = parse_input(data)
+    n = len(positions)
+    
+    # Generate all pairs with their distances
+    edges = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            dist = distance(positions[i], positions[j])
+            edges.append((dist, i, j))
+    
+    # Sort by distance
+    edges.sort()
+    
+    # Use Union-Find to track circuits
+    uf = UnionFind(n)
+    
+    # Keep connecting until all nodes are in one component
+    num_components = n
+    last_connection = None
+    
+    for dist, i, j in edges:
+        if uf.union(i, j):
+            num_components -= 1
+            last_connection = (i, j)
+            
+            # Check if we've formed one complete circuit
+            if num_components == 1:
+                break
+    
+    if last_connection:
+        i, j = last_connection
+        x1, y1, z1 = positions[i]
+        x2, y2, z2 = positions[j]
+        return x1 * x2
+    
     return 0
 
 
