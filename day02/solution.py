@@ -3,6 +3,7 @@
 Advent of Code 2025 - Day 2: Gift Shop
 """
 
+
 def read_input(filename='input.txt'):
     """Read and return the input file."""
     with open(filename, 'r') as f:
@@ -19,77 +20,109 @@ def parse_input(data):
     return ranges
 
 
-def is_invalid_id(num):
-    """Check if a number is made of some sequence of digits repeated twice."""
-    s = str(num)
-    length = len(s)
-    
-    # Must be even length to be split in half
-    if length % 2 != 0:
-        return False
-    
-    # Check if first half equals second half
-    mid = length // 2
-    first_half = s[:mid]
-    second_half = s[mid:]
-    
-    return first_half == second_half
+def arithmetic_sum(a, b):
+    """Return the sum of the inclusive range [a, b]."""
+    return (a + b) * (b - a + 1) // 2
+
+
+def divisors(n):
+    """Return sorted divisors of n."""
+    small = []
+    large = []
+    i = 1
+    while i * i <= n:
+        if n % i == 0:
+            small.append(i)
+            if i * i != n:
+                large.append(n // i)
+        i += 1
+    return small + large[::-1]
+
+
+def sum_repeated_numbers(ranges, min_repeat=2, max_repeat=None):
+    """Sum numbers that consist of a base pattern repeated."""
+    contributions = {}
+
+    for start, end in ranges:
+        if start > end:
+            start, end = end, start
+
+        digits_min = len(str(start))
+        digits_max = len(str(end))
+
+        for total_digits in range(digits_min, digits_max + 1):
+            lower_bound = 10 ** (total_digits - 1)
+            upper_bound = 10 ** total_digits - 1
+            lo = max(start, lower_bound)
+            hi = min(end, upper_bound)
+            if lo > hi:
+                continue
+
+            for block_len in divisors(total_digits):
+                repeats = total_digits // block_len
+                if repeats < min_repeat:
+                    continue
+                if max_repeat is not None and repeats > max_repeat:
+                    continue
+
+                pattern_min = 10 ** (block_len - 1)
+                pattern_max = 10 ** block_len - 1
+                multiplier = (10 ** total_digits - 1) // (10 ** block_len - 1)
+
+                low_pattern = max(pattern_min, (lo + multiplier - 1) // multiplier)
+                high_pattern = min(pattern_max, hi // multiplier)
+                if low_pattern > high_pattern:
+                    continue
+
+                key = (total_digits, block_len)
+                contributions[key] = contributions.get(key, 0) + (
+                    multiplier * arithmetic_sum(low_pattern, high_pattern)
+                )
+
+    total = 0
+
+    digits_to_blocks = {}
+    for (digits, block_len), value in contributions.items():
+        digits_to_blocks.setdefault(digits, {})
+        digits_to_blocks[digits][block_len] = (
+            digits_to_blocks[digits].get(block_len, 0) + value
+        )
+
+    for digits in sorted(digits_to_blocks):
+        block_values = digits_to_blocks[digits]
+        primitive = {}
+        for block_len in sorted(block_values):
+            value = block_values[block_len]
+            for smaller_len, smaller_value in primitive.items():
+                if block_len % smaller_len == 0:
+                    value -= smaller_value
+            primitive[block_len] = value
+            total += value
+
+    return total
 
 
 def part1(data):
     """Find all invalid IDs in the given ranges and sum them."""
     ranges = parse_input(data)
-    
-    total = 0
-    for start, end in ranges:
-        for num in range(start, end + 1):
-            if is_invalid_id(num):
-                total += num
-    
-    return total
-
-
-def is_invalid_id_part2(num):
-    """Check if a number is made of some sequence of digits repeated at least twice."""
-    s = str(num)
-    length = len(s)
-    
-    # Try all possible pattern lengths (from 1 to length//2)
-    for pattern_len in range(1, length // 2 + 1):
-        # Check if the length is divisible by pattern_len
-        if length % pattern_len == 0:
-            pattern = s[:pattern_len]
-            # Check if the entire string is this pattern repeated
-            repeats = length // pattern_len
-            if repeats >= 2 and pattern * repeats == s:
-                return True
-    
-    return False
+    return sum_repeated_numbers(ranges, min_repeat=2, max_repeat=2)
 
 
 def part2(data):
     """Find all invalid IDs (repeated at least twice) in the given ranges and sum them."""
     ranges = parse_input(data)
-    
-    total = 0
-    for start, end in ranges:
-        for num in range(start, end + 1):
-            if is_invalid_id_part2(num):
-                total += num
-    
-    return total
+    return sum_repeated_numbers(ranges, min_repeat=2)
 
 
 def main():
     import sys
-    # Read input (use command line argument if provided, otherwise default to input.txt)
+
     filename = sys.argv[1] if len(sys.argv) > 1 else 'input.txt'
     data = read_input(filename)
-    
-    # Solve parts
+
     result1 = part1(data)
     print(f"Part 1: {result1}")
-    
+
     result2 = part2(data)
     print(f"Part 2: {result2}")
 

@@ -23,9 +23,11 @@ def parse_input(data):
     return positions
 
 
-def distance(p1, p2):
-    """Calculate Euclidean distance between two 3D points."""
-    return ((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2 + (p1[2] - p2[2])**2) ** 0.5
+def distance_sq(p1, p2):
+    """Calculate squared Euclidean distance between two 3D points."""
+    return ((p1[0] - p2[0]) ** 2 +
+            (p1[1] - p2[1]) ** 2 +
+            (p1[2] - p2[2]) ** 2)
 
 
 class UnionFind:
@@ -66,78 +68,57 @@ class UnionFind:
         return list(components.values())
 
 
+def iter_edges(positions):
+    """Yield all unique edges with their squared distances."""
+    n = len(positions)
+    for i in range(n):
+        for j in range(i + 1, n):
+            yield (distance_sq(positions[i], positions[j]), i, j)
+
+
 def part1(data, num_connections=1000):
     """Connect the closest pairs and find product of three largest circuits."""
     positions = parse_input(data)
     n = len(positions)
-    
-    # Generate all pairs with their distances
-    edges = []
-    for i in range(n):
-        for j in range(i + 1, n):
-            dist = distance(positions[i], positions[j])
-            edges.append((dist, i, j))
-    
-    # Sort by distance
-    edges.sort()
-    
-    # Use Union-Find to track circuits
+
+    smallest_edges = heapq.nsmallest(num_connections, iter_edges(positions))
+
     uf = UnionFind(n)
-    
-    # Make the first num_connections edge attempts
-    for idx, (dist, i, j) in enumerate(edges):
-        if idx >= num_connections:
-            break
+    for _, i, j in smallest_edges:
         uf.union(i, j)
-    
-    # Get component sizes
+
     sizes = uf.get_component_sizes()
     sizes.sort(reverse=True)
-    
-    # Multiply the three largest
+
     if len(sizes) >= 3:
         return sizes[0] * sizes[1] * sizes[2]
-    else:
-        return 0
+    return 0
 
 
 def part2(data):
     """Find the last connection needed to form one circuit."""
     positions = parse_input(data)
     n = len(positions)
-    
-    # Generate all pairs with their distances
-    edges = []
-    for i in range(n):
-        for j in range(i + 1, n):
-            dist = distance(positions[i], positions[j])
-            edges.append((dist, i, j))
-    
-    # Sort by distance
-    edges.sort()
-    
-    # Use Union-Find to track circuits
+
+    edges = sorted(iter_edges(positions))
+
     uf = UnionFind(n)
-    
-    # Keep connecting until all nodes are in one component
     num_components = n
     last_connection = None
-    
-    for dist, i, j in edges:
+
+    for _, i, j in edges:
         if uf.union(i, j):
             num_components -= 1
             last_connection = (i, j)
-            
-            # Check if we've formed one complete circuit
             if num_components == 1:
                 break
-    
+
     if last_connection:
         i, j = last_connection
-        x1, y1, z1 = positions[i]
-        x2, y2, z2 = positions[j]
+        x1, _, _ = positions[i]
+        x2, _, _ = positions[j]
         return x1 * x2
-    
+
     return 0
 
 

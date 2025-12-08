@@ -24,19 +24,18 @@ def parse_input(data):
     
     # Pad all lines to the same width
     padded_lines = [line.ljust(width) for line in lines]
-    
+    empty_cols = [all(line[col] == ' ' for line in padded_lines) for col in range(width)]
+
     problems = []
     col = 0
-    
+
     while col < width:
-        # Skip empty columns
-        if all(line[col] == ' ' for line in padded_lines):
+        if empty_cols[col]:
             col += 1
             continue
-        
-        # Found start of a problem, collect all columns until we hit an empty column
+
         problem_cols = []
-        while col < width and not all(line[col] == ' ' for line in padded_lines):
+        while col < width and not empty_cols[col]:
             problem_cols.append(col)
             col += 1
         
@@ -100,20 +99,18 @@ def parse_input_rtl(data):
     
     # Pad all lines to the same width
     padded_lines = [line.ljust(width) for line in lines]
-    
+    empty_cols = [all(line[col] == ' ' for line in padded_lines) for col in range(width)]
+
     problems = []
     col = width - 1  # Start from the rightmost column
-    
+
     while col >= 0:
-        # Skip empty columns
-        if all(line[col] == ' ' for line in padded_lines):
+        if empty_cols[col]:
             col -= 1
             continue
-        
-        # Found start of a problem (reading right-to-left)
-        # Collect all columns until we hit an empty column
+
         problem_cols = []
-        while col >= 0 and not all(line[col] == ' ' for line in padded_lines):
+        while col >= 0 and not empty_cols[col]:
             problem_cols.append(col)
             col -= 1
         

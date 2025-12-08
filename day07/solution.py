@@ -27,127 +27,85 @@ def parse_input(data):
     return grid, start_pos
 
 
-def simulate_beam(grid, start_pos):
-    """
-    Simulate the tachyon beam splitting through the manifold.
-    Returns the total number of times the beam is split.
-    """
+def count_splits(grid, start_pos):
+    """Count unique splitter cells reached from the start."""
     rows = len(grid)
-    cols = len(grid[0]) if rows > 0 else 0
-    
-    # Track active beams: list of (row, col) positions
-    # Each beam moves downward one step at a time
-    beams = [start_pos]
-    split_count = 0
-    
-    # Track visited positions to avoid infinite loops
-    # (though beams only move down, so this shouldn't happen)
+    cols = len(grid[0]) if rows else 0
     visited = set()
-    
-    while beams:
-        new_beams = []
-        
-        for row, col in beams:
-            # Skip if we've already processed this position
-            if (row, col) in visited:
-                continue
-            visited.add((row, col))
-            
-            # Move down one step
-            next_row = row + 1
-            
-            # Check if beam exits the manifold
-            if next_row >= rows:
-                continue
-            
-            # Check what's at the next position
-            next_cell = grid[next_row][col]
-            
-            if next_cell == '^':
-                # Hit a splitter! The beam splits into left and right
-                split_count += 1
-                
-                # Create two new beams from the splitter position
-                # Left beam
-                if col - 1 >= 0:
-                    new_beams.append((next_row, col - 1))
-                
-                # Right beam
-                if col + 1 < cols:
-                    new_beams.append((next_row, col + 1))
-            
-            elif next_cell == '.':
-                # Empty space, beam continues downward
-                new_beams.append((next_row, col))
-            
-            elif next_cell == 'S':
-                # This shouldn't happen since S is the start
-                new_beams.append((next_row, col))
-        
-        beams = new_beams
-    
-    return split_count
+    split_seen = set()
+    splits = 0
+
+    stack = [start_pos]
+    while stack:
+        row, col = stack.pop()
+        if (row, col) in visited:
+            continue
+        visited.add((row, col))
+
+        next_row = row + 1
+        if next_row >= rows:
+            continue
+
+        cell = grid[next_row][col]
+        if cell == '^':
+            if (next_row, col) not in split_seen:
+                split_seen.add((next_row, col))
+                splits += 1
+            if col - 1 >= 0:
+                stack.append((next_row, col - 1))
+            if col + 1 < cols:
+                stack.append((next_row, col + 1))
+        else:
+            stack.append((next_row, col))
+
+    return splits
+
+
+def solve_from(grid, row, col, memo):
+    """Return (split_count, timeline_count) from a given position."""
+    key = (row, col)
+    if key in memo:
+        return memo[key]
+
+    rows = len(grid)
+    cols = len(grid[0]) if rows else 0
+    next_row = row + 1
+
+    if next_row >= rows:
+        memo[key] = (0, 1)
+        return memo[key]
+
+    cell = grid[next_row][col]
+
+    if cell == '^':
+        splits = 1  # splitting event at this cell
+        timelines = 0
+
+        for next_col in (col - 1, col + 1):
+            if 0 <= next_col < cols:
+                sub_splits, sub_timelines = solve_from(grid, next_row, next_col, memo)
+                splits += sub_splits
+                timelines += sub_timelines
+        memo[key] = (splits, timelines)
+        return memo[key]
+
+    # Empty space or S: continue straight down
+    result = solve_from(grid, next_row, col, memo)
+    memo[key] = result
+    return result
 
 
 def part1(data):
     """Count how many times the beam is split."""
     grid, start_pos = parse_input(data)
-    return simulate_beam(grid, start_pos)
-
-
-def count_timelines(grid, start_pos):
-    """
-    Count the number of distinct timelines using memoization.
-    Each position can generate multiple timelines.
-    """
-    rows = len(grid)
-    cols = len(grid[0]) if rows > 0 else 0
-    
-    memo = {}
-    
-    def count_from_position(row, col):
-        """Count how many timelines originate from this position."""
-        if (row, col) in memo:
-            return memo[(row, col)]
-        
-        # Move down one step
-        next_row = row + 1
-        
-        # Check if we exit the manifold
-        if next_row >= rows:
-            # One timeline exits here
-            return 1
-        
-        next_cell = grid[next_row][col]
-        
-        if next_cell == '^':
-            # Splitter - count timelines from both branches
-            count = 0
-            
-            # Left branch
-            if col - 1 >= 0:
-                count += count_from_position(next_row, col - 1)
-            
-            # Right branch
-            if col + 1 < cols:
-                count += count_from_position(next_row, col + 1)
-            
-            memo[(row, col)] = count
-            return count
-        
-        else:
-            # Continue straight down
-            count = count_from_position(next_row, col)
-            memo[(row, col)] = count
-            return count
-    
-    return count_from_position(start_pos[0], start_pos[1])
+    return count_splits(grid, start_pos)
 
 
 def part2(data):
     """Count the number of timelines using memoized recursion."""
     grid, start_pos = parse_input(data)
-    return count_timelines(grid, start_pos)
+    _, timelines = solve_from(grid, start_pos[0], start_pos[1], {})
+    return timelines
 
 
 def main():

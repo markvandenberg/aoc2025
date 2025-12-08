@@ -3,6 +3,16 @@
 Advent of Code 2025 - Day 4: Printing Department
 """
 
+from collections import deque
+
+
+DIRECTIONS = [
+    (-1, -1), (-1, 0), (-1, 1),
+    (0, -1),           (0, 1),
+    (1, -1),  (1, 0),  (1, 1),
+]
+
+
 def read_input(filename='input.txt'):
     """Read and return the input file."""
     with open(filename, 'r') as f:
@@ -14,29 +24,26 @@ def parse_input(data):
     return [list(line) for line in data.split('\n')]
 
 
-def count_adjacent_rolls(grid, row, col):
-    """Count the number of paper rolls (@) in the 8 adjacent positions."""
+def compute_adjacent_counts(grid):
+    """Precompute adjacent roll counts for every cell."""
     rows = len(grid)
-    cols = len(grid[0])
-    
-    # 8 directions: up, down, left, right, and 4 diagonals
-    directions = [
-        (-1, -1), (-1, 0), (-1, 1),
-        (0, -1),           (0, 1),
-        (1, -1),  (1, 0),  (1, 1)
-    ]
-    
-    count = 0
-    for dr, dc in directions:
-        new_row = row + dr
-        new_col = col + dc
-        
-        # Check if position is within bounds
-        if 0 <= new_row < rows and 0 <= new_col < cols:
-            if grid[new_row][new_col] == '@':
-                count += 1
-    
-    return count
+    cols = len(grid[0]) if rows else 0
+    counts = [[0] * cols for _ in range(rows)]
+
+    for row in range(rows):
+        for col in range(cols):
+            if grid[row][col] != '@':
+                continue
+
+            neighbor_count = 0
+            for dr, dc in DIRECTIONS:
+                nr = row + dr
+                nc = col + dc
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == '@':
+                    neighbor_count += 1
+            counts[row][col] = neighbor_count
+
+    return counts
 
 
 def part1(data):
@@ -45,21 +52,14 @@ def part1(data):
     A roll can be accessed if there are fewer than 4 rolls in adjacent positions.
     """
     grid = parse_input(data)
-    rows = len(grid)
-    cols = len(grid[0])
-    
+    counts = compute_adjacent_counts(grid)
+
     accessible_count = 0
-    
-    for row in range(rows):
-        for col in range(cols):
-            # Only check positions that have a paper roll
-            if grid[row][col] == '@':
-                adjacent_count = count_adjacent_rolls(grid, row, col)
-                
-                # Can access if fewer than 4 adjacent rolls
-                if adjacent_count < 4:
-                    accessible_count += 1
-    
+    for row in range(len(grid)):
+        for col in range(len(grid[row])):
+            if grid[row][col] == '@' and counts[row][col] < 4:
+                accessible_count += 1
+
     return accessible_count
 
 
@@ -70,31 +70,35 @@ def part2(data):
     """
     grid = parse_input(data)
     rows = len(grid)
-    cols = len(grid[0])
-    
+    cols = len(grid[0]) if rows else 0
+    counts = compute_adjacent_counts(grid)
+
+    queue = deque()
+    for row in range(rows):
+        for col in range(cols):
+            if grid[row][col] == '@' and counts[row][col] < 4:
+                queue.append((row, col))
+
     total_removed = 0
-    
-    while True:
-        # Find all accessible rolls in current state
-        accessible = []
-        
-        for row in range(rows):
-            for col in range(cols):
-                if grid[row][col] == '@':
-                    adjacent_count = count_adjacent_rolls(grid, row, col)
-                    if adjacent_count < 4:
-                        accessible.append((row, col))
-        
-        # If no more accessible rolls, stop
-        if not accessible:
-            break
-        
-        # Remove all accessible rolls
-        for row, col in accessible:
-            grid[row][col] = '.'
-        
-        total_removed += len(accessible)
-    
+
+    while queue:
+        row, col = queue.popleft()
+        if grid[row][col] != '@':
+            continue
+        if counts[row][col] >= 4:
+            continue
+
+        grid[row][col] = '.'
+        total_removed += 1
+
+        for dr, dc in DIRECTIONS:
+            nr = row + dr
+            nc = col + dc
+            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == '@':
+                counts[nr][nc] -= 1
+                if counts[nr][nc] == 3:
+                    queue.append((nr, nc))
+
     return total_removed
 
 

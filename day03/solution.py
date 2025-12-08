@@ -15,21 +15,25 @@ def parse_input(data):
 
 
 def max_joltage(bank):
-    """Find the maximum joltage possible from a battery bank.
-    
-    We need to pick exactly 2 batteries (digits) to maximize the value.
-    This means picking the two largest digits in order.
-    """
-    # Find the two positions with the largest digits
+    """Find the maximum joltage possible from a battery bank."""
+    if len(bank) < 2:
+        return int(bank or 0)
+
+    digits = [int(ch) for ch in bank]
+    max_suffix = [0] * len(digits)
+    running_max = digits[-1]
+    max_suffix[-1] = running_max
+
+    # Precompute the best digit available to the right of each position.
+    for idx in range(len(digits) - 2, -1, -1):
+        running_max = max(running_max, digits[idx])
+        max_suffix[idx] = running_max
+
     best = 0
-    
-    # Try all pairs of positions
-    for i in range(len(bank)):
-        for j in range(i + 1, len(bank)):
-            # Form the number from batteries at positions i and j
-            value = int(bank[i] + bank[j])
-            best = max(best, value)
-    
+    for idx in range(len(digits) - 1):
+        candidate = digits[idx] * 10 + max_suffix[idx + 1]
+        if candidate > best:
+            best = candidate
     return best
 
 
@@ -45,37 +49,24 @@ def part1(data):
 
 
 def max_joltage_n_batteries(bank, n):
-    """Find the maximum joltage possible by selecting exactly n batteries.
-    
-    To maximize the resulting number, we want:
-    1. The leftmost digits to be as large as possible
-    2. This means we should skip the smallest digits
-    
-    Strategy: Remove (len(bank) - n) smallest digits while maintaining order.
-    """
+    """Find the maximum joltage possible by selecting exactly n batteries."""
     if n >= len(bank):
         return int(bank)
-    
-    digits_to_remove = len(bank) - n
-    bank_list = list(bank)
-    
-    # Greedily remove the smallest digits while maintaining order
-    # We want to keep the lexicographically largest subsequence of length n
-    for _ in range(digits_to_remove):
-        # Find the position to remove: we want to remove the first digit
-        # that is smaller than the digit after it (or the last digit if none found)
-        removed = False
-        for i in range(len(bank_list) - 1):
-            if bank_list[i] < bank_list[i + 1]:
-                bank_list.pop(i)
-                removed = True
-                break
-        
-        # If we didn't find any digit smaller than the next, remove the last digit
-        if not removed:
-            bank_list.pop()
-    
-    return int(''.join(bank_list))
+
+    to_remove = len(bank) - n
+    stack = []
+
+    # Monotonic stack that drops smaller digits when a larger digit appears.
+    for digit in bank:
+        while to_remove and stack and stack[-1] < digit:
+            stack.pop()
+            to_remove -= 1
+        stack.append(digit)
+
+    if to_remove:
+        stack = stack[:-to_remove]
+
+    return int(''.join(stack[:n]))
 
 
 def part2(data):

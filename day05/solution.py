@@ -3,6 +3,8 @@
 Advent of Code 2025 - Day 5: Cafeteria
 """
 
+from bisect import bisect_right
+
 def read_input(filename='input.txt'):
     """Read and return the input file."""
     with open(filename, 'r') as f:
@@ -27,21 +29,44 @@ def parse_input(data):
     return fresh_ranges, available_ids
 
 
-def is_fresh(ingredient_id, fresh_ranges):
-    """Check if an ingredient ID is fresh (falls into any range)."""
-    for start, end in fresh_ranges:
-        if start <= ingredient_id <= end:
-            return True
-    return False
+def merge_ranges(ranges):
+    """Merge overlapping or adjacent ranges."""
+    if not ranges:
+        return []
+
+    ranges.sort()
+    merged = [ranges[0]]
+    for start, end in ranges[1:]:
+        prev_start, prev_end = merged[-1]
+        if start <= prev_end + 1:
+            merged[-1] = (prev_start, max(prev_end, end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def build_lookup(ranges):
+    merged = merge_ranges(ranges)
+    starts = [start for start, _ in merged]
+    return merged, starts
+
+
+def contains_value(merged, starts, value):
+    idx = bisect_right(starts, value) - 1
+    if idx < 0:
+        return False
+    start, end = merged[idx]
+    return start <= value <= end
 
 
 def part1(data):
     """Count how many available ingredient IDs are fresh."""
     fresh_ranges, available_ids = parse_input(data)
+    merged, starts = build_lookup(fresh_ranges)
     
     fresh_count = 0
     for ingredient_id in available_ids:
-        if is_fresh(ingredient_id, fresh_ranges):
+        if contains_value(merged, starts, ingredient_id):
             fresh_count += 1
     
     return fresh_count
@@ -53,20 +78,8 @@ def part2(data):
     We need to merge overlapping ranges and count all IDs they cover.
     """
     fresh_ranges, _ = parse_input(data)
-    
-    # Sort ranges by start position
-    fresh_ranges.sort()
-    
-    # Merge overlapping ranges
-    merged = []
-    for start, end in fresh_ranges:
-        if merged and start <= merged[-1][1] + 1:
-            # Overlaps or adjacent with previous range, merge them
-            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
-        else:
-            # No overlap, add as new range
-            merged.append((start, end))
-    
+    merged = merge_ranges(fresh_ranges)
+
     # Count total IDs in all merged ranges
     total = 0
     for start, end in merged:
