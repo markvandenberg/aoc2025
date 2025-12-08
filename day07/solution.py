@@ -95,9 +95,59 @@ def part1(data):
     return simulate_beam(grid, start_pos)
 
 
+def count_timelines(grid, start_pos):
+    """
+    Count the number of distinct timelines using memoization.
+    Each position can generate multiple timelines.
+    """
+    rows = len(grid)
+    cols = len(grid[0]) if rows > 0 else 0
+    
+    memo = {}
+    
+    def count_from_position(row, col):
+        """Count how many timelines originate from this position."""
+        if (row, col) in memo:
+            return memo[(row, col)]
+        
+        # Move down one step
+        next_row = row + 1
+        
+        # Check if we exit the manifold
+        if next_row >= rows:
+            # One timeline exits here
+            return 1
+        
+        next_cell = grid[next_row][col]
+        
+        if next_cell == '^':
+            # Splitter - count timelines from both branches
+            count = 0
+            
+            # Left branch
+            if col - 1 >= 0:
+                count += count_from_position(next_row, col - 1)
+            
+            # Right branch
+            if col + 1 < cols:
+                count += count_from_position(next_row, col + 1)
+            
+            memo[(row, col)] = count
+            return count
+        
+        else:
+            # Continue straight down
+            count = count_from_position(next_row, col)
+            memo[(row, col)] = count
+            return count
+    
+    return count_from_position(start_pos[0], start_pos[1])
+
+
 def part2(data):
-    """Solve part 2 (not yet revealed)."""
-    return 0
+    """Count the number of timelines using memoized recursion."""
+    grid, start_pos = parse_input(data)
+    return count_timelines(grid, start_pos)
 
 
 def main():
