@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Advent of Code 2025 - Day X
+Advent of Code 2025 - Day 9: Movie Theater
 """
 
 def read_input(filename='input.txt'):
@@ -10,28 +10,51 @@ def read_input(filename='input.txt'):
 
 
 def parse_input(data):
-    """Parse the input data."""
+    """Parse red tile positions."""
     lines = data.split('\n')
-    return lines
+    tiles = []
+    for line in lines:
+        if line.strip():
+            x, y = map(int, line.split(','))
+            tiles.append((x, y))
+    return tiles
+
+
+def calculate_area(p1, p2):
+    """Calculate area of rectangle with opposite corners at p1 and p2."""
+    x1, y1 = p1
+    x2, y2 = p2
+    # Add 1 because we want to include both endpoints
+    width = abs(x2 - x1) + 1
+    height = abs(y2 - y1) + 1
+    return width * height
 
 
 def part1(data):
-    """Solve part 1."""
-    parsed = parse_input(data)
-    # TODO: Implement solution
-    return None
+    """Find largest rectangle using two red tiles as opposite corners."""
+    tiles = parse_input(data)
+    
+    max_area = 0
+    
+    # Try all pairs of tiles as opposite corners
+    for i in range(len(tiles)):
+        for j in range(i + 1, len(tiles)):
+            area = calculate_area(tiles[i], tiles[j])
+            max_area = max(max_area, area)
+    
+    return max_area
 
 
 def part2(data):
-    """Solve part 2."""
-    parsed = parse_input(data)
-    # TODO: Implement solution
-    return None
+    """Solve part 2 (not yet revealed)."""
+    return 0
 
 
 def main():
-    # Read input
-    data = read_input()
+    import sys
+    # Read input (use command line argument if provided, otherwise default to input.txt)
+    filename = sys.argv[1] if len(sys.argv) > 1 else 'input.txt'
+    data = read_input(filename)
     
     # Solve parts
     result1 = part1(data)
