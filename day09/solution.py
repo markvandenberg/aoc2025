@@ -45,9 +45,108 @@ def part1(data):
     return max_area
 
 
+def get_edge_tiles(red_tiles):
+    """Get tiles on edges between consecutive red tiles."""
+    edge_tiles = set()
+    
+    for i in range(len(red_tiles)):
+        x1, y1 = red_tiles[i]
+        x2, y2 = red_tiles[(i + 1) % len(red_tiles)]
+        
+        # Add all tiles between these two red tiles
+        if x1 == x2:  # Same column, vertical line
+            min_y, max_y = min(y1, y2), max(y1, y2)
+            for y in range(min_y, max_y + 1):
+                edge_tiles.add((x1, y))
+        elif y1 == y2:  # Same row, horizontal line
+            min_x, max_x = min(x1, x2), max(x1, x2)
+            for x in range(min_x, max_x + 1):
+                edge_tiles.add((x, y1))
+    
+    return edge_tiles
+
+
+def is_inside_polygon(x, y, polygon):
+    """Check if point (x, y) is inside polygon using ray casting algorithm."""
+    n = len(polygon)
+    inside = False
+    
+    p1x, p1y = polygon[0]
+    for i in range(1, n + 1):
+        p2x, p2y = polygon[i % n]
+        
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+        
+        p1x, p1y = p2x, p2y
+    
+    return inside
+
+
+def is_tile_green(x, y, red_tiles_set, edge_tiles_set, red_tiles_list):
+    """Check if a tile is green (on edge or inside polygon)."""
+    if (x, y) in red_tiles_set:
+        return False
+    if (x, y) in edge_tiles_set:
+        return True
+    return is_inside_polygon(x, y, red_tiles_list)
+
+
+def rectangle_contains_only_red_or_green(p1, p2, red_tiles_set, edge_tiles_set, red_tiles_list):
+    """Check if rectangle from p1 to p2 contains only red or green tiles."""
+    x1, y1 = p1
+    x2, y2 = p2
+    
+    min_x, max_x = min(x1, x2), max(x1, x2)
+    min_y, max_y = min(y1, y2), max(y1, y2)
+    
+    for x in range(min_x, max_x + 1):
+        for y in range(min_y, max_y + 1):
+            if (x, y) not in red_tiles_set:
+                if not is_tile_green(x, y, red_tiles_set, edge_tiles_set, red_tiles_list):
+                    return False
+    
+    return True
+
+
 def part2(data):
-    """Solve part 2 (not yet revealed)."""
-    return 0
+    """Find largest rectangle using only red and green tiles."""
+    tiles = parse_input(data)
+    red_tiles_set = set(tiles)
+    
+    def rectangle_fully_inside(x1, y1, x2, y2):
+        """Check if rectangle is fully inside by testing only corners."""
+        min_x, max_x = min(x1, x2), max(x1, x2)
+        min_y, max_y = min(y1, y2), max(y1, y2)
+        
+        # Check all 4 corners
+        corners = [
+            (min_x, min_y), (min_x, max_y),
+            (max_x, min_y), (max_x, max_y)
+        ]
+        
+        for x, y in corners:
+            if (x, y) not in red_tiles_set and not is_inside_polygon(x, y, tiles):
+                return False
+        return True
+    
+    max_area = 0
+    for i in range(len(tiles)):
+        for j in range(i + 1, len(tiles)):
+            x1, y1 = tiles[i]
+            x2, y2 = tiles[j]
+            
+            if rectangle_fully_inside(x1, y1, x2, y2):
+                area = calculate_area((x1, y1), (x2, y2))
+                if area > max_area:
+                    max_area = area
+    
+    return max_area
 
 
 def main():
