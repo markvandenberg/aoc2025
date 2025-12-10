@@ -3,6 +3,8 @@
 Advent of Code 2025 - Day 10: Factory
 """
 import re
+from scipy.optimize import milp, LinearConstraint, Bounds
+import numpy as np
 
 def read_input(filename='input.txt'):
     """Read and return the input file."""
@@ -15,7 +17,7 @@ def parse_machine(line):
     # Extract the indicator light pattern
     lights_match = re.search(r'\[([.#]+)\]', line)
     lights = lights_match.group(1)
-    target = [1 if c == '#' else 0 for c in lights]
+    target_lights = [1 if c == '#' else 0 for c in lights]
     
     # Extract button wirings
     buttons = []
@@ -23,7 +25,11 @@ def parse_machine(line):
         button_lights = [int(x) for x in match.group(1).split(',')]
         buttons.append(button_lights)
     
-    return target, buttons
+    # Extract joltage requirements
+    joltage_match = re.search(r'\{([0-9,]+)\}', line)
+    target_joltage = [int(x) for x in joltage_match.group(1).split(',')]
+    
+    return target_lights, buttons, target_joltage
 
 
 def solve_machine(target, buttons):
@@ -114,18 +120,65 @@ def part1(data):
     
     for line in lines:
         if line.strip():
-            target, buttons = parse_machine(line)
-            presses = solve_machine(target, buttons)
+            target_lights, buttons, _ = parse_machine(line)
+            presses = solve_machine(target_lights, buttons)
             if presses is not None:
                 total += presses
     
     return total
 
 
+def solve_joltage(target, buttons):
+    """
+    Solve joltage configuration using mixed-integer linear programming.
+    """
+    n_counters = len(target)
+    n_buttons = len(buttons)
+    
+    # Build constraint matrix A where A[i][j] = 1 if button j affects counter i
+    A = np.zeros((n_counters, n_buttons))
+    for j, button in enumerate(buttons):
+        for counter_idx in button:
+            A[counter_idx][j] = 1
+    
+    b_lower = np.array(target, dtype=float)
+    b_upper = np.array(target, dtype=float)
+    
+    # Objective: minimize sum of all button presses
+    c = np.ones(n_buttons)
+    
+    # Integer constraints
+    integrality = np.ones(n_buttons, dtype=int)
+    
+    # Bounds: each button press count >= 0
+    bounds = Bounds(lb=np.zeros(n_buttons), ub=np.inf)
+    
+    # Constraints: A @ x == b
+    constraints = LinearConstraint(A, lb=b_lower, ub=b_upper)
+    
+    # Solve integer linear program
+    result = milp(c, integrality=integrality, constraints=constraints, bounds=bounds)
+    
+    if not result.success:
+        return None
+    
+    # Use the objective function value directly (already the sum)
+    return int(round(result.fun))
+
+
 def part2(data):
-    """Solve part 2."""
-    # TODO: Implement when part 2 is revealed
-    return None
+    """Find minimum button presses for joltage configuration."""
+    lines = data.split('\n')
+    total = 0
+    
+    for line in lines:
+        if line.strip():
+            _, buttons, target_joltage = parse_machine(line)
+            presses = solve_joltage(target_joltage, buttons)
+            if presses is not None:
+                total += presses
+    
+    return total
 
 
 def main():
