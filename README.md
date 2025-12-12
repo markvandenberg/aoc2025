@@ -58,7 +58,7 @@ python solution.py example.txt
 | 09  | ⭐     | ⭐     |
 | 10  | ⭐     | ⭐     |
 | 11  | ⭐     | ⭐     |
-| 12  |        |        |
+| 12  | ⭐     |        |
 
 ## Speed Optimization
 
